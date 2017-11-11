@@ -59,15 +59,15 @@ def form_example():
         else:
             return '''<h1>The newUser_id value is: {}</h1> 
                       <h1>The newUser_pw value is: {}</h1>'''.format(newUser_id, newUser_pw)
-
-    return '''<form method="POST">
-                 <h1>+@ PlusAlpha. Save for "even" more!</h1>
-                  user ID: <input type="text" name="newUser_id"><br>
-                  user first_name: <input type="text" name="newUser_first_name"><br>
-                  user last_name: <input type="text" name="newUser_last_name"><br>
-                  user PW: <input type="text" name="newUser_pw"><br>
-                  <input type="submit" value="Submit"><br>
-              </form>'''
+    return render_template('register.html')
+    # return '''<form method="POST">
+    #              <h1>+@ PlusAlpha. Save for "even" more!</h1>
+    #               user ID: <input type="text" name="newUser_id"><br>
+    #               user first_name: <input type="text" name="newUser_first_name"><br>
+    #               user last_name: <input type="text" name="newUser_last_name"><br>
+    #               user PW: <input type="text" name="newUser_pw"><br>
+    #               <input type="submit" value="Submit"><br>
+    #           </form>'''
 
 @app.route('/login', methods=['GET', 'POST'])
 def form_login():
@@ -90,14 +90,15 @@ def form_login():
                 return "Hello ! "+ newUser_firstname + " " + newUser_lastname  + " <br> <a href='/loan/"+ newUser_firstname +"'>Get Loan</a> <br> <a href='/payback/"+ newUser_firstname +"'>Pay Back</a>  <br> <a href='/logout'>Logout</a>"
         return home()
 
-    return '''<form method="POST">
-                <h1>+@ PlusAlpha. Save for "even" more!</h1>
-                <h1>Login </h1>
-                  user firstname: <input type="text" name="newUser_firstname"><br>
-                  user lastname: <input type="text" name="newUser_lastname"><br>
-                  userPW: <input type="text" name="newUser_pw"><br>
-                  <input type="submit" value="Submit"><br>
-              </form>'''
+    return render_template('login.html')
+    # return '''<form method="POST">
+    #             <h1>+@ PlusAlpha. Save for "even" more!</h1>
+    #             <h1>Login </h1>
+    #               user firstname: <input type="text" name="newUser_firstname"><br>
+    #               user lastname: <input type="text" name="newUser_lastname"><br>
+    #               userPW: <input type="text" name="newUser_pw"><br>
+    #               <input type="submit" value="Submit"><br>
+    #           </form>'''
 
 
 @app.route('/loan/<name>', methods=['GET', 'POST'])
@@ -188,7 +189,9 @@ def payback(name):
                       <a href='/home'>Home</a> 
                       '''
 
-    return '''<form method="POST">
+    return '''{% extends "layout.html" %}
+{% block body %}
+<form method="POST">
                 <h1>+@ PlusAlpha. Save for "even" more! <br> Hello, '''+ name + '''</h1>
                   The amount borrowed $ ''' + str(original) + ''' <br>
                   Total amount include interest $ ''' + str(loan) + ''' <br>
@@ -196,7 +199,7 @@ def payback(name):
                   How much money you want to pay back?: <input type="text" name="amount"><br>
                   <input type="submit" value="Submit"><br>
               </form>
-              <a href='/home'>Home</a>
+              <a href='/home'>Home</a>{% endblock %}
               '''
 
 @app.route('/transaction/<account_id>', methods=['GET', 'POST'])
@@ -245,13 +248,14 @@ def home():
         # return render_template('/login.html')
     else:
         return "Hello! +@ PlusAlpha. Save for even more! <br><a href='/login'>Login</a> <br>  <a href='/logout'>Logout</a> <br>"
-
-
-@app.route('/test2', methods=['GET', 'POST'])
-def ttt():
-
-
-    return render_template('test.html')
+#
+#
+# @app.route('/test2', methods=['GET', 'POST'])
+# def ttt():
+#     if request.method == 'POST':
+#         print("dfasdfasdfasdfsadfsdf")
+#
+#     return render_template('test.html')
 
 @app.route('/home')
 def home_myaccount():
@@ -276,4 +280,5 @@ def logout():
 
 if __name__ == "__main__":
     app.secret_key = os.urandom(12)
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(host='0.0.0.0', port=80)
