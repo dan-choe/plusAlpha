@@ -5,7 +5,6 @@ from wtforms import Form, TextField, TextAreaField, validators, StringField, Sub
 import os
 import json
 import datetime
-from forms import FirePut
 
 app = Flask(__name__)
 fb = firebase.FirebaseApplication('https://plusalpha-77c9d.firebaseio.com', None)
@@ -60,6 +59,7 @@ def form_example():
                       <h1>The newUser_pw value is: {}</h1>'''.format(newUser_id, newUser_pw)
 
     return '''<form method="POST">
+                 <h1>+@ PlusAlpha. Save for "even" more!</h1>
                   user ID: <input type="text" name="newUser_id"><br>
                   user first_name: <input type="text" name="newUser_first_name"><br>
                   user last_name: <input type="text" name="newUser_last_name"><br>
@@ -77,12 +77,15 @@ def form_login():
         userIds = fb.get('/users', None)
         for target in userIds:
             if(userIds[str(target)]['newUser_firstname'] == newUser_firstname and userIds[str(target)]['newUser_lastname'] == newUser_lastname and userIds[str(target)]['newUser_pw'] == newUser_pw):
+                global current_customerId
+                global current_accountId
                 current_accountId = userIds[str(target)]['account_id']
                 current_customerId = userIds[str(target)]['customer_id']
-                return "Hello ! "+ newUser_firstname + " " + newUser_lastname  + "  <a href='/loan/"+ newUser_firstname +"'>Get Loan</a>   <br> <a href='/logout'>Logout</a>"
+                return "Hello ! "+ newUser_firstname + " " + newUser_lastname  + " <br> <a href='/loan/"+ newUser_firstname +"'>Get Loan</a> <br> <a href='/payback/"+ newUser_firstname +"'>Pay Back</a>  <br> <a href='/logout'>Logout</a>"
         return home()
 
     return '''<form method="POST">
+                <h1>+@ PlusAlpha. Save for "even" more!</h1>
                 <h1>Login </h1>
                   user firstname: <input type="text" name="newUser_firstname"><br>
                   user lastname: <input type="text" name="newUser_lastname"><br>
@@ -98,28 +101,77 @@ def loan_request(name):
         # newUser_pw = request.form['newUser_pw']
         # newUser_firstname = request.form['newUser_first_name']
         # newUser_lastname = request.form['newUser_last_name']
+        global current_customerId
+        global current_accountId
 
         user_requestAmount = request.form['amount']
+        count = 0
+        possible = []
 
         userIds = fb.get('/users', None)
         for target in userIds:
             if (str(target) != str(current_accountId) and float(userIds[str(target)]['savingAmount']) >= float(user_requestAmount)):
-                print('found!!!! who has enough money: ', target)
+                count+= 1
+                if(count == 1):
+                    curr = fb.get('/users/' + str(current_accountId), None)
+                    subtotal = float(user_requestAmount) + (float(user_requestAmount) * 0.25)
 
-                fb.patch('/users/' + str(result['_id']),
-                         {'newUser_firstname': newUser_firstname, 'newUser_lastname': newUser_lastname,
-                          'newUser_pw': newUser_pw, 'savingAmount': 0, 'customer_id': result['customer_id'],
-                          'account_id': result['_id']})
+                    fb.patch('/loan/' + str(current_accountId),
+                             {'newUser_firstname': name, 'borrower_accountId': str(current_accountId), 'borrower_customerId': str(current_customerId),
+                              'lender_accountID': str(target), 'requestAmount': float(user_requestAmount), 'loanTotal':subtotal })
+                possible.append( {'key':str(target), 'amount':float(userIds[str(target)]['savingAmount']) })
 
-
-                return "Hello ! " + name + " " +  " We found a person who can lend you the money.+ " + "  <br> <a href='/logout'>Logout</a>"
-        return home()
+        if(count == 0):
+            return home()
+        else:
+            fb.patch('/users/' + str(possible[0]['key']), {'savingAmount':  float(possible[0]['amount']) -  float(user_requestAmount) })
+            return "Hello ! " + name + " " + " We found " + str(count) + "people who can lend you the money. We chose best lender for you. The money is deposited.+ " + "  <br> <a href='/logout'>Logout</a>"
 
     return '''<form method="POST">
-                <h1>Hello, '''+ name + '''</h1>
+                <h1>+@ PlusAlpha. Save for "even" more! Hello, '''+ name + '''</h1>
                   request Loan amount: <input type="text" name="amount"><br>
                   <input type="submit" value="Submit"><br>
               </form>'''
+
+
+@app.route('/payback/<name>', methods=['GET', 'POST'])
+def payback(name):
+    global current_customerId
+    global current_accountId
+
+    loan = 100
+    lender = ''
+    original = 0
+    curr = fb.get('/loan', None)
+    for key, value in curr.items():
+        if (key == str(current_accountId)):
+            loan = value['loanTotal']
+            lender = value['lender_accountID']
+            original = value['requestAmount']
+    if request.method == 'POST':  # this block is only entered when the form is submitted
+
+
+        user_requestAmount = request.form['amount']
+
+        # userIds = fb.get('/loan/'+str(current_accountId), None)
+
+        curr = fb.get('/loan', None)
+        for key, value in curr.items():
+            if(key == str(current_accountId)):
+                print(current_accountId,'dfdf-----------', value['loanTotal'])
+
+
+
+
+    return '''<form method="POST">
+                <h1>+@ PlusAlpha. Save for "even" more! <br> Hello, '''+ name + '''</h1>
+                  The amount borrowed $ ''' + str(original) + ''' <br>
+                  Total amount include interest $ ''' + str(loan) + ''' <br>
+                  Intrest rate is 25% <br>
+                  How much money you want to pay back?: <input type="text" name="amount"><br>
+                  <input type="submit" value="Submit"><br>
+              </form>'''
+
 
 
 @app.route('/transaction/<account_id>', methods=['GET', 'POST'])
@@ -149,6 +201,8 @@ def transactionCheck(account_id):
 
             fb.patch('/users/' + str(account_id), {'savingAmount': userData['savingAmount'] + saving})
 
+    return ''
+
 # every mid-night system runs
 @app.route('/run')
 def checkAllTransaction():
@@ -156,15 +210,16 @@ def checkAllTransaction():
     # print('here', userIds)
     for target in userIds:
         transactionCheck(target)
-    return 'PlusAlpha - Daily Process is done.'
+    return '+@ PlusAlpha. Save for "even" more! - Daily Process is done.'
     # go to report page
 
 @app.route('/')
 def home():
     if not session.get('logged_in'):
-        return render_template('/login.html')
+        return "+@ PlusAlpha. Save for even more!! <br> <a href='/login'>Login</a> <br>  <a href='/logout'>Logout</a> <br>"
+        # return render_template('/login.html')
     else:
-        return "Hello Boss!  <a href='/logout'>Logout</a>"
+        return "Hello! +@ PlusAlpha. Save for even more! <br><a href='/login'>Login</a> <br>  <a href='/logout'>Logout</a> <br>"
 
 # @app.route('/login', methods=['POST'])
 # def do_admin_login():
