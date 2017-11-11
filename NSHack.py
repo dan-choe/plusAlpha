@@ -14,6 +14,8 @@ accounts = 'http://api.reimaginebanking.com/accounts?key=1d0ff9c1ed84ac0b6db1e13
 
 current_customerId = ''
 current_accountId = ''
+current_name = ''
+current_name2 = ''
 
 @app.route('/register', methods=['GET', 'POST'])
 def form_example():
@@ -79,8 +81,12 @@ def form_login():
             if(userIds[str(target)]['newUser_firstname'] == newUser_firstname and userIds[str(target)]['newUser_lastname'] == newUser_lastname and userIds[str(target)]['newUser_pw'] == newUser_pw):
                 global current_customerId
                 global current_accountId
+                global current_name
+                global current_name2
                 current_accountId = userIds[str(target)]['account_id']
                 current_customerId = userIds[str(target)]['customer_id']
+                current_name = newUser_firstname
+                current_name2 = newUser_firstname
                 return "Hello ! "+ newUser_firstname + " " + newUser_lastname  + " <br> <a href='/loan/"+ newUser_firstname +"'>Get Loan</a> <br> <a href='/payback/"+ newUser_firstname +"'>Pay Back</a>  <br> <a href='/logout'>Logout</a>"
         return home()
 
@@ -96,11 +102,7 @@ def form_login():
 
 @app.route('/loan/<name>', methods=['GET', 'POST'])
 def loan_request(name):
-    if request.method == 'POST':  # this block is only entered when the form is submitted
-        # newUser_id = request.form.get('newUser_id')
-        # newUser_pw = request.form['newUser_pw']
-        # newUser_firstname = request.form['newUser_first_name']
-        # newUser_lastname = request.form['newUser_last_name']
+    if request.method == 'POST':
         global current_customerId
         global current_accountId
 
@@ -125,7 +127,8 @@ def loan_request(name):
             return home()
         else:
             fb.patch('/users/' + str(possible[0]['key']), {'savingAmount':  float(possible[0]['amount']) -  float(user_requestAmount) })
-            return "Hello ! " + name + " " + " We found " + str(count) + "people who can lend you the money. We chose best lender for you. The money is deposited.+ " + "  <br> <a href='/logout'>Logout</a>"
+            return "Hello ! " + name + " " + " We found " + str(count) + "people who can lend you the money. <br> We chose best lender for you. " \
+                                                                         "<br> The money is deposited.+ " + "  <br> <a href='/home'>Home</a>   <br> <a href='/logout'>Logout</a>"
 
     return '''<form method="POST">
                 <h1>+@ PlusAlpha. Save for "even" more! Hello, '''+ name + '''</h1>
@@ -142,26 +145,48 @@ def payback(name):
     loan = 100
     lender = ''
     original = 0
+    add = 0
+
     curr = fb.get('/loan', None)
     for key, value in curr.items():
         if (key == str(current_accountId)):
             loan = value['loanTotal']
-            lender = value['lender_accountID']
+            lender = str(value['lender_accountID'])
             original = value['requestAmount']
+    #
+    adds = fb.get('/users/'+lender, None)
+    for key, value in adds.items():
+        if(key == 'savingAmount'):
+            add = float(value)
+            # print('vvv', value)
+        # for k, v in value.items():
+
+
     if request.method == 'POST':  # this block is only entered when the form is submitted
-
-
         user_requestAmount = request.form['amount']
-
         # userIds = fb.get('/loan/'+str(current_accountId), None)
-
+        remain = original
         curr = fb.get('/loan', None)
         for key, value in curr.items():
             if(key == str(current_accountId)):
-                print(current_accountId,'dfdf-----------', value['loanTotal'])
+                remain = float(value['loanTotal']) - float(user_requestAmount)
+                fb.patch('/loan/' + str(current_accountId), {'loanTotal': remain})
+                print(current_accountId,'remain -----------', remain)
+                loan = remain + (remain * 0.25)
 
+                add += float(user_requestAmount)
+                fb.patch('/users/' + str(lender), {'savingAmount': add})
 
-
+        return '''<form method="POST">
+                        <h1>+@ PlusAlpha. Save for "even" more! <br> Hello, ''' + name + '''</h1>
+                          The amount borrowed $ ''' + str(remain) + ''' <br>
+                          Total amount include interest $ ''' + str(loan) + ''' <br>
+                          Intrest rate is 25% <br>
+                          How much money you want to pay back?: <input type="text" name="amount"><br>
+                          <input type="submit" value="Submit"><br>
+                      </form>    
+                      <a href='/home'>Home</a> 
+                      '''
 
     return '''<form method="POST">
                 <h1>+@ PlusAlpha. Save for "even" more! <br> Hello, '''+ name + '''</h1>
@@ -170,9 +195,9 @@ def payback(name):
                   Intrest rate is 25% <br>
                   How much money you want to pay back?: <input type="text" name="amount"><br>
                   <input type="submit" value="Submit"><br>
-              </form>'''
-
-
+              </form>
+              <a href='/home'>Home</a>
+              '''
 
 @app.route('/transaction/<account_id>', methods=['GET', 'POST'])
 def transactionCheck(account_id):
@@ -210,26 +235,29 @@ def checkAllTransaction():
     # print('here', userIds)
     for target in userIds:
         transactionCheck(target)
-    return '+@ PlusAlpha. Save for "even" more! - Daily Process is done.'
+    return '+@ PlusAlpha. Save for "even" more! - Daily Process is done. <br> <a href="/home">Home</a>  '
     # go to report page
 
 @app.route('/')
 def home():
     if not session.get('logged_in'):
-        return "+@ PlusAlpha. Save for even more!! <br> <a href='/login'>Login</a> <br>  <a href='/logout'>Logout</a> <br>"
+        return "+@ PlusAlpha. Save for even more!! <br> <a href='/login'>Login</a> <br> "
         # return render_template('/login.html')
     else:
         return "Hello! +@ PlusAlpha. Save for even more! <br><a href='/login'>Login</a> <br>  <a href='/logout'>Logout</a> <br>"
 
-# @app.route('/login', methods=['POST'])
-# def do_admin_login():
-#     result = fb.get('/users', None)
-#     if request.form['password'] == result[request.form['username']]['newUser_pw']:
-#         session['logged_in'] = True
-#         print('success login: ', result[request.form['username']])
-#     else:
-#         flash('wrong password!')
-#     return home()
+
+@app.route('/test2', methods=['GET', 'POST'])
+def ttt():
+
+
+    return render_template('test.html')
+
+@app.route('/home')
+def home_myaccount():
+    global current_name
+    global current_name2
+    return "+@ PlusAlpha. Save for even more! <br> " + str(current_name) + " " + str(current_name2) +" <br>  <a href='/loan/"+ current_name +"'>Get Loan</a> <br> <a href='/payback/"+ current_name +"'>Pay Back</a>  <br> <a href='/logout'>Logout</a>"
 
 # @app.route('/carduser', methods=['GET', 'POST'])
 @app.route('/carduser')
@@ -249,5 +277,3 @@ def logout():
 if __name__ == "__main__":
     app.secret_key = os.urandom(12)
     app.run(debug=True)
-
-
