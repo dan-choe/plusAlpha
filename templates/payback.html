@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<form action="/payback" method="POST">
+
+<table style="width:500px;">
+    <tr>
+        <td>The amount borrowed </td>
+        <td><input type="text" name="original", value="{{ original }}" disabled></td>
+ </tr>
+
+    <tr>
+        <td>Total amount include interest $</td>
+        <td><input type="text" name="loan" value="{{ loan }}" disabled></td>
+ </tr>
+
+    <tr>
+        <td><br><br></td>
+        <td></td>
+ </tr>
+
+
+    <tr>
+        <td>How much money you want to pay back?</td>
+        <td><input type="text" name="amount"></td>
+ </tr>
+<tr>
+    <td colspan="2" style="text-align: center;"><input type="submit" value="Submit"></td>
+</tr>
+
+</table>
+
+              </form>
+
+{% endblock %}

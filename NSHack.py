@@ -87,26 +87,30 @@ def form_login():
                 current_customerId = userIds[str(target)]['customer_id']
                 current_name = newUser_firstname
                 current_name2 = newUser_firstname
-                return "Hello ! "+ newUser_firstname + " " + newUser_lastname  + " <br> <a href='/loan/"+ newUser_firstname +"'>Get Loan</a> <br> <a href='/payback/"+ newUser_firstname +"'>Pay Back</a>  <br> <a href='/logout'>Logout</a>"
-        return home()
+
+        return render_template('home.html')
 
     return render_template('login.html')
-    # return '''<form method="POST">
-    #             <h1>+@ PlusAlpha. Save for "even" more!</h1>
-    #             <h1>Login </h1>
-    #               user firstname: <input type="text" name="newUser_firstname"><br>
-    #               user lastname: <input type="text" name="newUser_lastname"><br>
-    #               userPW: <input type="text" name="newUser_pw"><br>
-    #               <input type="submit" value="Submit"><br>
-    #           </form>'''
 
 
-@app.route('/loan/<name>', methods=['GET', 'POST'])
-def loan_request(name):
+
+@app.route('/loanSuccess', methods=['GET', 'POST'])
+def loan_result(count):
+    global current_customerId
+    global current_accountId
+    global current_name
+
+    return render_template('loanSuccess.html', cnt=str(count))
+
+
+@app.route('/loan', methods=['GET', 'POST'])
+def loan_request():
+    global current_customerId
+    global current_accountId
+    global current_name
+    name = current_name
+
     if request.method == 'POST':
-        global current_customerId
-        global current_accountId
-
         user_requestAmount = request.form['amount']
         count = 0
         possible = []
@@ -128,20 +132,24 @@ def loan_request(name):
             return home()
         else:
             fb.patch('/users/' + str(possible[0]['key']), {'savingAmount':  float(possible[0]['amount']) -  float(user_requestAmount) })
-            return "Hello ! " + name + " " + " We found " + str(count) + "people who can lend you the money. <br> We chose best lender for you. " \
-                                                                         "<br> The money is deposited.+ " + "  <br> <a href='/home'>Home</a>   <br> <a href='/logout'>Logout</a>"
+            return loan_result(count)
+            # return render_template('loanSuccess.html', cnt=str(count))
+            # return "Hello ! " + name + " " + " We found " + str(count) + "people who can lend you the money. <br> We chose best lender for you. " \
+            #                                                              "<br> The money is deposited.+ " + "  <br> <a href='/home'>Home</a>   <br> <a href='/logout'>Logout</a>"
 
-    return '''<form method="POST">
-                <h1>+@ PlusAlpha. Save for "even" more! Hello, '''+ name + '''</h1>
-                  request Loan amount: <input type="text" name="amount"><br>
-                  <input type="submit" value="Submit"><br>
-              </form>'''
+    # return '''<form method="POST">
+    #             <h1>+@ PlusAlpha. Save for "even" more! Hello, '''+ name + '''</h1>
+    #               request Loan amount: <input type="text" name="amount"><br>
+    #               <input type="submit" value="Submit"><br>
+    #           </form>'''
+    return render_template('loan.html', usernm=str(name))
 
 
-@app.route('/payback/<name>', methods=['GET', 'POST'])
-def payback(name):
+@app.route('/payback', methods=['GET', 'POST'])
+def payback():
     global current_customerId
     global current_accountId
+    global current_name
 
     loan = 100
     lender = ''
@@ -159,9 +167,6 @@ def payback(name):
     for key, value in adds.items():
         if(key == 'savingAmount'):
             add = float(value)
-            # print('vvv', value)
-        # for k, v in value.items():
-
 
     if request.method == 'POST':  # this block is only entered when the form is submitted
         user_requestAmount = request.form['amount']
@@ -178,29 +183,18 @@ def payback(name):
                 add += float(user_requestAmount)
                 fb.patch('/users/' + str(lender), {'savingAmount': add})
 
-        return '''<form method="POST">
-                        <h1>+@ PlusAlpha. Save for "even" more! <br> Hello, ''' + name + '''</h1>
-                          The amount borrowed $ ''' + str(remain) + ''' <br>
-                          Total amount include interest $ ''' + str(loan) + ''' <br>
-                          Intrest rate is 25% <br>
-                          How much money you want to pay back?: <input type="text" name="amount"><br>
-                          <input type="submit" value="Submit"><br>
-                      </form>    
-                      <a href='/home'>Home</a> 
-                      '''
-
-    return '''{% extends "layout.html" %}
-{% block body %}
-<form method="POST">
-                <h1>+@ PlusAlpha. Save for "even" more! <br> Hello, '''+ name + '''</h1>
-                  The amount borrowed $ ''' + str(original) + ''' <br>
-                  Total amount include interest $ ''' + str(loan) + ''' <br>
-                  Intrest rate is 25% <br>
-                  How much money you want to pay back?: <input type="text" name="amount"><br>
-                  <input type="submit" value="Submit"><br>
-              </form>
-              <a href='/home'>Home</a>{% endblock %}
-              '''
+        return render_template('payback.html', original=str(remain), loan=str(loan))
+        # return '''<form method="POST">
+        #                 <h1>+@ PlusAlpha. Save for "even" more! <br> Hello, ''' + current_name + '''</h1>
+        #                   The amount borrowed $ ''' + str(remain) + ''' <br>
+        #                   Total amount include interest $ ''' + str(loan) + ''' <br>
+        #                   Intrest rate is 25% <br>
+        #                   How much money you want to pay back?: <input type="text" name="amount"><br>
+        #                   <input type="submit" value="Submit"><br>
+        #               </form>
+        #               <a href='/home'>Home</a>
+        #               '''
+    return render_template('payback.html', original=str(original), loan=str(loan) )
 
 @app.route('/transaction/<account_id>', methods=['GET', 'POST'])
 def transactionCheck(account_id):
@@ -235,10 +229,10 @@ def transactionCheck(account_id):
 @app.route('/run')
 def checkAllTransaction():
     userIds = fb.get('/users', None)
-    # print('here', userIds)
     for target in userIds:
         transactionCheck(target)
-    return '+@ PlusAlpha. Save for "even" more! - Daily Process is done. <br> <a href="/home">Home</a>  '
+    return render_template('runResult.html', userName=str(current_name) + " " + str(current_name2))
+    # return '+@ PlusAlpha. Save for "even" more! - Daily Process is done. <br> <a href="/home">Home</a>  '
     # go to report page
 
 @app.route('/')
@@ -248,20 +242,16 @@ def home():
         # return render_template('/login.html')
     else:
         return "Hello! +@ PlusAlpha. Save for even more! <br><a href='/login'>Login</a> <br>  <a href='/logout'>Logout</a> <br>"
-#
-#
-# @app.route('/test2', methods=['GET', 'POST'])
-# def ttt():
-#     if request.method == 'POST':
-#         print("dfasdfasdfasdfsadfsdf")
-#
-#     return render_template('test.html')
 
 @app.route('/home')
 def home_myaccount():
-    global current_name
+    global current_names
     global current_name2
-    return "+@ PlusAlpha. Save for even more! <br> " + str(current_name) + " " + str(current_name2) +" <br>  <a href='/loan/"+ current_name +"'>Get Loan</a> <br> <a href='/payback/"+ current_name +"'>Pay Back</a>  <br> <a href='/logout'>Logout</a>"
+
+    return render_template('home.html', userName=str(current_name)+" "+str(current_name2))
+
+    # return "+@ PlusAlpha. Save for even more! <br> " + str(current_name) + " " + str(current_name2) +" <br>
+    # <a href='/loan/"+ current_name +"'>Get Loan</a> <br> <a href='/payback>Pay Back</a>  <br> <a href='/logout'>Logout</a>"
 
 # @app.route('/carduser', methods=['GET', 'POST'])
 @app.route('/carduser')

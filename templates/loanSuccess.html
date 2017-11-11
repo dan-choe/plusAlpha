@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<form action="/loanSuccess" method="POST">
+
+<p> We found  <input type="text" name="cnt" value="{{ cnt }}" disabled>
+    people who can lend you the money. <br> We chose best lender for you. </p>
+
+              </form>
+
+{% endblock %}
+

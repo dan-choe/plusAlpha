@@ -10,6 +10,15 @@ body{
     text-align: center;
     background-color: #eee;
 }
+input {
+    height: 2em; /* for IE */
+    vertical-align: middle; /* This is optional but it makes legacy IEs look better */
+    margin-bottom: 10px;
+}
+
+input[type=text]:focus {
+    border: 3px solid #8ac640;
+}
 
 a{
 	color: #000;
@@ -18,10 +27,36 @@ a{
 }
 
 a:hover{
-	color: #5B84E9;
+	color: #fff;
 	text-decoration: none;
 	font-size: 1.2em;
+    background-color: #4CAF50;
 }
+
+table{
+    width: 300px;
+    margin: 0px auto;
+}
+
+
+.button {
+    background-color: #8ac640; /* Green */
+    border: none;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+.button1 {border-radius: 2px;}
+.button2 {border-radius: 4px;}
+.button3 {border-radius: 8px;}
+.button4 {border-radius: 12px; background-color: #df215c;}
+.button5 {border-radius: 50%; background-color: #594cdf;}
 
 
 h1{
@@ -30,18 +65,31 @@ h1{
     color: #8ac640;
     font-size: 2.5em;
 }
+
+    h1{
+    font-family: 'Roboto', serif;
+    font-weight: bold;
+{#    color: #8ac640;#}
+    font-size: 2.2em;
+}
+
+
 </style>
  
 </head>
 <body>
+    <br>
 
 	<h1>+@ Plus Alpha & NS Hack</h1>
 
 	<h2>Save for "even" more!</h2>
 
 	<p>
-	<a href='http://127.0.0.1/register'>Register</a> /
-	<a href='http://127.0.0.1/login'>Login</a> /
+
+	<a href='http://127.0.0.1/register' class="button button3">Register</a> /
+	<a href='http://127.0.0.1/login' class="button button3">Login</a>/
+<a href='http://127.0.0.1/home' class="button button3">Loan</a> /
+        <a href='http://127.0.0.1/run' class="button button4">Run PlusAlpha</a>
 
 	<!-- <a href='http://127.0.0.1/stateProduct/1'>Dental Pariticipant Population across state</a> /
 	<a href='http://127.0.0.1/stateProduct/2'>Accidential Pariticipant Population across state</a> /

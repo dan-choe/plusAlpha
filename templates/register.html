@@ -2,12 +2,38 @@
 {% block body %}
 
 <form action="/register" method="POST">
-                user ID: <input type="text" name="newUser_id"><br>
-                user firstname: <input type="text" name="newUser_firstname"><br>
-                  user lastname: <input type="text" name="newUser_lastname"><br>
-                  userPW: <input type="text" name="newUser_pw"><br>
-            retype userPW: <input type="text" name="newUser_pw2"><br>
-                  <input type="submit" value="Submit"><br>
+
+
+
+<table>
+    <tr>
+        <td>User ID</td>
+        <td><input type="text" name="newUser_id"></td>
+ </tr>
+
+    <tr>
+        <td>User Firstname</td>
+        <td><input type="text" name="newUser_firstname"></td>
+ </tr>
+    <tr>
+        <td>User Lastname</td>
+        <td><input type="text" name="newUser_lastname"></td>
+ </tr><tr>
+        <td>User Password</td>
+        <td><input type="text" name="newUser_pw"></td>
+    </tr>
+
+    <tr>
+        <td>Retype User Password</td>
+        <td><input type="text" name="newUser_pw2"></td>
+    </tr>
+
+<tr>
+    <td colspan="2" style="text-align: center;"><input type="submit" value="Submit"></td>
+</tr>
+
+</table>
+
               </form>
 
 {% endblock %}
